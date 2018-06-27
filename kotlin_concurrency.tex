@@ -121,26 +121,87 @@ Is concurrency relevant for mobile development?
 		\item search by current location 
 		\item search by location name 
 	\end{itemize}
+	advanced 
+	\begin{itemize}
+		\item search suggestions when tying 
+	\end{itemize}
 \end{column}
 \end{columns}
 \end{frame}
 \begin{frame}[fragile]
-	How it looks like: simple state machine  (simplified) 
+	Translate ACs into code: simple \emph{sequential} state machine  (simplified) 
 	\begin{figure}
-\begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,auto] 
-   \node[state,initial] (q_0)   {Enter}; 
-   \node[state] (q_1) [above right=of q_0] {GPS}; 
-   \node[state] (q_2) [below right=of q_0] {API}; 
-   \node[state](q_3) [below right=of q_1] {View};
-    \path[->] 
-    (q_0) edge  node {} (q_1)
-          edge  node [swap] {} (q_2)
-    (q_1) edge  node  {} (q_3)
-    (q_2) edge  node [swap] {} (q_3) ;
+		\begin{tikzpicture}[scale=1]
+%\node[align=center] at (1,0.5) {Enter};
+\node[align=center] at (2,1.85) {click GPS icon};
+\draw [thick,->] (2,1.4) -- (2,0.15);
+\node[align=center] at (3.15,0.85) {Connect\\GPS};
+\draw [thick,decorate,decoration={brace,amplitude=6pt,raise=0pt}] (2.5,0.15) -- (3.75,0.15);
+%\draw [thick,->] (4,0.85) -- (4,0.15);
+\node[align=center] at (6.25,0.6) {API request};
+%\draw [thick,->] (8.25,0.85) -- (8.25,0.15);
+\node[align=center] at (9.15,0.5) {Update view};
+\draw [thick,decorate,decoration={brace,amplitude=6pt,raise=0pt}] (4.25,0.15) -- (8,0.15);
+\draw [thick,->] (0,0) -- (10,0);
+%\draw [thick,->] (4.6,-0.85) -- (4.6,-0.15);
+%\draw [thick,->] (7.65,-0.4) -- (7.65,-0.15);
+%\draw [thick,decorate,decoration={brace,amplitude=6pt,raise=0pt,mirror}] (4.75,-0.15) -- (7.5,-0.15);
+%\node[align=center] at (6.25,-0.85) {Symptomatic\\period};
+%\node[align=center] at (4.6,-1.3) {Onset of\\symptoms};
+\end{tikzpicture}
+	\end{figure}
+\begin{figure}
+		\begin{tikzpicture}[scale=1]
+\node[align=center] at (1,0.5) {Typing};
+\node[align=center] at (2,1.85) {click magnifier icon};
+\draw [thick,->] (2,1.4) -- (2,0.15);
+%\node[align=center] at (3.15,0.85) {Connect\\GPS};
+%\draw [thick,decorate,decoration={brace,amplitude=6pt,raise=0pt}] (2.5,0.15) -- (3.75,0.15);
+%\draw [thick,->] (4,0.85) -- (4,0.15);
+\node[align=center] at (4.75,0.6) {API request};
+%\draw [thick,->] (8.25,0.85) -- (8.25,0.15);
+\node[align=center] at (9.15,0.5) {Update view};
+\draw [thick,decorate,decoration={brace,amplitude=6pt,raise=0pt}] (2.5,0.15) -- (8,0.15);
+\draw [thick,->] (0,0) -- (10,0);
+%\draw [thick,->] (4.6,-0.85) -- (4.6,-0.15);
+%\draw [thick,->] (7.65,-0.4) -- (7.65,-0.15);
+%\draw [thick,decorate,decoration={brace,amplitude=6pt,raise=0pt,mirror}] (4.75,-0.15) -- (7.5,-0.15);
+%\node[align=center] at (6.25,-0.85) {Symptomatic\\period};
+%\node[align=center] at (4.6,-1.3) {Onset of\\symptoms};
 \end{tikzpicture}
 	\end{figure}
 
 \end{frame}
+\begin{frame}[fragile]
+	\begin{figure}
+		\begin{tikzpicture}[scale=1]
+%\node[align=center] at (1,0.5) {Enter};
+\draw [thick,->] (2,1.4) -- (2,0.15);
+\draw [red, thick,->] (3,1.4) -- (3,0.15);
+\draw [red, thick,->] (3.5,1.4) -- (3.5,0.15);
+\draw [blue, thick,->] (7.5,1.4) -- (7.5,0.15);
+\draw [blue, thick,->] (4.6,-1.4) -- (4.6,-0.15);
+\draw [red, thick,->] (6.0,-1.4) -- (6.0,-0.15);
+\draw [thick,->] (6.6,-1.4) -- (6.6,-0.15);
+%\node[align=center] at (3.15,0.85) {Connect\\GPS};
+\draw [thick,decorate,decoration={brace,amplitude=6pt,raise=0pt}] (2.5,0.15) -- (3.75,0.15);
+%\draw [thick,->] (4,0.85) -- (4,0.15);
+%\node[align=center] at (6.25,0.6) {API request};
+%\draw [thick,->] (8.25,0.85) -- (8.25,0.15);
+%\node[align=center] at (9.15,0.5) {Update view};
+\draw [thick,decorate,decoration={brace,amplitude=6pt,raise=0pt}] (4.25,0.15) -- (8,0.15);
+\draw [thick,->] (0,0) -- (10,0);
+%\draw [thick,->] (4.6,-0.85) -- (4.6,-0.15);
+%\draw [thick,->] (7.65,-0.4) -- (7.65,-0.15);
+%\draw [thick,decorate,decoration={brace,amplitude=6pt,raise=0pt,mirror}] (4.75,-0.15) -- (7.5,-0.15);
+%\node[align=center] at (6.25,-0.85) {Symptomatic\\period};
+%\node[align=center] at (4.6,-1.3) {Onset of\\symptoms};
+\end{tikzpicture}
+	\end{figure}
+\end{frame}
+
+
+
 \begin{frame}[fragile]
 \begin{columns}
 \begin{column}{0.5\textwidth}
@@ -153,28 +214,81 @@ Is concurrency relevant for mobile development?
 \end{column}
 \begin{column}{0.6\textwidth}
 	\begin{itemize}
-		\item GPS connection is asynchronous and might fail
-		\item Network requests are sent in parallel at each letter
-		\item Debouncing 
-		\item Latest takes priority (avoid overriding with old data) 
-		\item Android lifecycle, etc
+		\item Delays
+		\item User inputs 
+		\item Failures (connectivity, gps on mobile devices)
+		\item Ordering of api response
+		\item \emph{android/ios lifecycle}, etc
 	\end{itemize}
 \end{column}
 \end{columns}
 
 \end{frame}
+
+\begin{frame}[fragile]
+	\begin{figure}
+		\includegraphics[width=.7\textwidth]{loading}
+	\end{figure}
+\end{frame}
+\begin{frame}[fragile]
+	First approach: put constrains in place to restrict the range of possible options  
+	\begin{itemize}
+		\item Conditionally forbid user events (disable buttons, loading spinners, etc) 
+		\item Boolean flags 
+		\item Be defensive (if/else) 
+		\item Bind/unbind from lifecycle , etc
+	\end{itemize}
+	(Or more technical constrains like single thread executors, queues, synchronization, etc)
+\end{frame}
+
+\begin{frame}
+	The approach doesn't scale. 
+
+	\begin{itemize}
+		\item Pre-fatching
+		\item Background upload
+		\item Recovery/retry logic 
+		\item debouncing, timeouts 
+		\item no control on platform lifecycle
+	\end{itemize}
+
+\end{frame}
+
 \begin{frame}[fragile]
 	``Concurrency is the composition of independently executing processes, typically functions, but they don't have to be.''
+
 	``Parallelism is the simultaneous execution of multiple things, possibly related, possibly not.''
 
-	Concurrency is a way to structure the computer programs. 
-	Parallelism is \emph{not} the goal of concurrency
-
 Rob Pike
+
 \end{frame}
 \begin{frame}[fragile]
-Tony Horne seminal paper 
+	\begin{figure}
+		\includegraphics[height=.8\textheight]{rob_talk}
+		\caption{\url{https://www.youtube.com/watch?v=cN_DpYBzKso&t=1061s}}
+	\end{figure}
 \end{frame}
+
+\begin{frame}[fragile]
+	\begin{figure}
+		\includegraphics[height=.8\textheight]{tony}
+		\caption{Tony Hoare's seminal paper}
+	\end{figure}
+\end{frame}
+\begin{frame}[fragile]
+``The most obvious application of the new ideas is to the specification, design,
+and implementation of computer systems which continuously act and
+interact with their environment. The basic idea is that these systems can be
+readily decomposed into subsystems which operate concurrently and interact
+with each other as well as with their common environment. The parallel composition
+of subsystems is as simple as the sequential composition of lines or
+statements in a conventional programming language.``
+
+	Tony Hoare (CSP book, 2015)
+\end{frame}
+
+
+
 \begin{frame}[fragile]
 Java definition of concurrency and Leslie Lamport seminal paper 
 \end{frame}
