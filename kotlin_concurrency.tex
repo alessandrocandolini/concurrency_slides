@@ -90,6 +90,7 @@
 
 \section{We live in a concurrent world}
 \begin{frame}[fragile]
+	% Spoiler
 	\begin{figure}
 		\centering
 		\includegraphics[width=.8\textwidth]{concurrency_coffee}
@@ -491,6 +492,27 @@ interface ApiService {
 \end{lstlisting}
 	Monadic chainability, error handling, etc (not in this talk :) ) 
 \end{frame}
+
+\begin{frame}
+	Java is mostly blocking, \eg, 
+	\begin{itemize}
+		\item Locks, synchronized
+		\item Java 7 future are blocking 
+		\item Some libraries expose a non-blocking API but still they rely internally on thread pools (eg, okhttp) 
+		\item java IO is blocking , etc
+	\end{itemize}
+
+	The non-blocking  side of the java world, \eg 
+	\begin{itemize}
+		\item atomic variables and non-blocking data structures on top of them
+		\item CompletableFutures expose to the consumer a callback 
+		\item NIO, etc
+	\end{itemize}
+	 
+	 Traditional Java approach: re-usable thread executors 
+\end{frame}
+
+
 \section{Kotlin coroutines demystified }
 \begin{frame}
 	\begin{figure}
@@ -530,27 +552,268 @@ interface ApiService {
 
 % What happens to the caller 
 % What happent to the body 
+\begin{frame}[fragile]
+\begin{lstlisting}[language=Kotlin, basicstyle=\ttfamily]
+suspend fun getLocations(position : LatLng) 
+	     : List<String> {
+		     
+  val data = networkCall()
+  return listOf(data)
+}
+
+suspend fun networkCall() = /* ... */
+\end{lstlisting}
+\end{frame}
+\begin{frame}[fragile]
+\begin{lstlisting}[language=Kotlin, basicstyle=\ttfamily]
+suspend fun getLocations(position : LatLng) 
+	     : List<String> {
+		     
+  val data = networkCall()
+  return listOf(data)
+}
+
+suspend fun networkCall() {
+	Thread.sleep(3000) // <-- !! this is blocking
+	return "jjej"
+}
+\end{lstlisting}
+\end{frame}
+\begin{frame}[fragile]
+\begin{lstlisting}[language=Kotlin, basicstyle=\ttfamily]
+suspend fun getLocations(position : LatLng) 
+	     : List<String> {
+		     
+  val data = networkCall()
+  return listOf(data)
+}
+
+suspend fun networkCall() {
+	delay(3000) // <- suspend function
+	return "jjej"
+}
+\end{lstlisting}
+\end{frame}
+\begin{frame}
+	Wrap non-blocking code in suspend functions.
+
+	Things like Java 7 future cannot be wrap into suspend functions without blocking the coroutine (or you post on some other thread executor to creare an interface that looks non-blocking for the consumer) 
+\end{frame}
+\begin{frame}[fragile]
+	Tentative use of retrofit (still a prototype) 
+\begin{lstlisting}[language=Kotlin, basicstyle=\ttfamily]
+interface ApiService {
+  @GET("/...")
+  suspend fun getLocations(@query("latlng") position : LatLng) 
+	     : List<String> 
+}
+\end{lstlisting}
+	The converter at the moment supports Deferred (for technical limitations) 
+\begin{lstlisting}[language=Kotlin, basicstyle=\ttfamily]
+interface ApiService {
+
+  @GET("/...")
+  fun getLocations(/*.. */) : Deferred<List<String>>
+}
+\end{lstlisting}
+\end{frame}
+\begin{frame}[fragile]
+\begin{lstlisting}[language=Kotlin, basicstyle=\ttfamily]
+
+/** inject resource here */
+
+suspend fun onClick() {
+  val position = gpsService.getPositionFromGps()
+  val locations = apiService.getLocations(position)
+  view.showLocations(locations)
+}
+\end{lstlisting}
+\end{frame}
 
 \begin{frame}[fragile]
-%\begin{lstlisting}[language=Kotlin, basicstyle=\ttfamily]
-%\end{lstlisting}
+\begin{lstlisting}[language=Kotlin, basicstyle=\ttfamily]
+
+/** inject resource here */
+
+fun onClick() {
+	launch {
+  val position = gpsService.getPositionFromGps()
+  val locations = apiService.getLocations(position)
+  view.showLocations(locations)
+  }
+}
+\end{lstlisting}
+\end{frame}
+\begin{frame}[fragile]
+\begin{lstlisting}[language=Kotlin, basicstyle=\ttfamily]
+
+/** inject resource here */
+
+fun onClick() {
+	launch(IO) {
+  val position = gpsService.getPositionFromGps()
+  val locations = apiService.getLocations(position)
+  launch(UI) {
+  view.showLocations(locations)
+  }
+  }
+}
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}
+Few coroutines launchers:	
+	\begin{itemize}
+		\item  launch: fire and forget
+		\item async/await: starts a coroutine that produce a result 
+		\item runBlocking:  blocks current thread interruptibly until its completion (useful for testing) 
+	\end{itemize}
+
+\end{frame}
+
+\begin{frame}
+	Remark on idiomatic kotlin
+	\begin{figure}
+		\includegraphics[width=\textwidth]{best_practise}
+	\end{figure}
+\end{frame}
+
+\section{Coroutines under the hood (CPS)}
+\begin{frame}{Continuation-passing style}
+
+Ingredients
+	\begin{itemize}
+		\item Continuation (aka, callbacks) 
+		\item State machine 
+	\end{itemize}
+\end{frame}
+
+'
+\begin{frame}[fragile]
+\begin{lstlisting}[language=Kotlin, basicstyle=\ttfamily]
+interface Continuation<in T> {
+    val context: CoroutineContext
+
+    fun resume(value: T)
+
+    fun resumeWithException(exception: Throwable)
+}
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+\begin{lstlisting}[language=Kotlin, basicstyle=\ttfamily]
+
+suspend fun onClick() {
+  // label 0 
+  val position = gpsService.getPositionFromGps()
+  // label 1 
+  val locations = apiService.getLocations(position)
+  // label 2
+  view.showLocations(locations)
+}
+\end{lstlisting}
+\end{frame}
+\begin{frame}[fragile]
+\begin{lstlisting}[language=Kotlin, basicstyle=\ttfamily]
+
+suspend fun onClick() {
+  switch(label) { // label????
+    case 0 :
+      val position = gpsService.getPositionFromGps()
+    case 1: 
+      val locations = apiService.getLocations(position)
+    case  2:
+      view.showLocations(locations)
+  }
+}
+\end{lstlisting}
+\end{frame}
+\begin{frame}[fragile]
+\begin{lstlisting}[language=Kotlin, basicstyle=\ttfamily]
+
+suspend fun onClick() {
+	val sm = object : CoroutineImpl {..}
+  switch(sm.label) {
+    case 0 :
+      val position = gpsService.getPositionFromGps()
+    case 1: 
+      val locations = apiService.getLocations(position)
+    case  2:
+      view.showLocations(locations)
+  }
+}
+\end{lstlisting}
+\end{frame}
+\begin{frame}[fragile]
+\begin{lstlisting}[language=Kotlin, basicstyle=\ttfamily]
+
+fun onClick(continuation : Continuation) {
+	val sm = continuation as ThisSM ?: 
+	object : CoroutineImpl {
+		fun resume(...) {
+		onClick(this)
+			} 
+		}
+  switch(sm.label) { 
+    case 0 :
+      sm.label = 1 // next 
+      gpsService.getPositionFromGps(sm)
+    case 1: 
+      val position = sm.result as /** type **/ 
+      sm.label = 2 // next 
+      apiService.getLocations(position, sm)
+    case  2:
+      view.showLocations(locations)
+  }
+}
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}
+	There is lot more than this for plain coroutines:
+	\begin{itemize}
+		\item Inner details: threading, context, how to deal with return immediately, etc
+		\item coroutines  in collections
+		\item cancellation 
+		\item how to bridge coroutines with external libraries/Java APIs
+		\item error handling, recovery etc 
+	\end{itemize}
+\end{frame}
+\begin{frame}[fragile]
+	\begin{alertblock}{Warning}
+		Blocking code in coroutines
+	\end{alertblock}
 \end{frame}
 \section{Coroutines-powered concurrency models}
 \begin{frame}[fragile]
-	Disadvantages of Java locking:
-	\begin{itemize}
-		\item Hard to maintain and error prone
-		\item Priority inversion 
-		\item Resumption can be expensive 
-		\item Wasting resources 
-	\end{itemize} 
-\end{frame}
-\begin{frame}[fragile]
 \begin{itemize}
 	\item CSP (aka, channels) 
-\item actors 
+\item Kotlin actors 
 	\end{itemize}
+	Another talk\ldots 
 \end{frame}
+
+	\begin{frame}{References}
+		\begin{itemize}
+			\item KotlinConf 2017 - Introduction to Coroutines by Roman Elizarov
+				\begin{itemize}
+					\item \url{https://www.youtube.com/watch?v=_hfBv0a09Jc}
+				\end{itemize}
+			\item KotlinConf 2017 - Deep Dive into Coroutines on JVM by Roman Elizarov
+				\begin{itemize}
+					\item \url{https://www.youtube.com/watch?v=YrrUCSi72E8}
+				\end{itemize}
+			\item Rob Pike - Concurrency Is Not Parallelism
+				\begin{itemize}
+					\item \url{https://www.youtube.com/watch?v=cN_DpYBzKso&t=1061s}
+				\end{itemize}
+			\item Guide to kotlinx.coroutines by example 
+				\begin{itemize}
+					\item \url{https://github.com/Kotlin/kotlinx.coroutines/blob/master/coroutines-guide.md}
+				\end{itemize}
+		\end{itemize}
+	\end{frame}
 \plain{Questions?}
 
 %\begin{frame}[allowframebreaks] {References}
