@@ -1,0 +1,13 @@
+marble sequential
+{
+    source a:     +--A-B--C->
+}
+marble concurrent
+{
+    source a:     +--A-B--C->
+    source b:     +--B--A-C->
+    source c:     +--C-B--A->
+    source d:     +--C--A-B->
+    source d:     +--A-C-B-->
+    source d:     +--B--C-A->
+}
